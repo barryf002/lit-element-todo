@@ -1,5 +1,5 @@
-import {LitElement, html} from 'lit-element/lit-element.js';
-import {style} from './ToDo-styles.js';
+import { LitElement, html } from 'lit-element/lit-element.js';
+import { style } from './ToDo-styles.js';
 import { apiClient } from './components/ApiClient.js';
 import './components/ToDoItem.js';
 // import Logo from './assets/logo.png';
@@ -20,39 +20,14 @@ export class ToDo extends LitElement {
     super();
     this.todoList = [];
     this.newContent = '';
-  }
 
-  async getTodos(){
-    try{
-      var todoList = await apiClient.getJson('todo');
-      this.todoList = todoList;
-    }
-    catch(error){
-      console.error('getTodos failed');
-    }
+    this.updateToDoItem = this.updateToDoItem.bind(this);
+    this.deleteItem = this.deleteItem.bind(this);
   }
 
   async firstUpdated()
-  {
+  {    
     this.getTodos();
-  }
-
-  async createNewToDoItem() {
-
-    try{
-      var todo = await apiClient.postJson('todo', 
-        JSON.stringify({ content: this.newContent }));
-      
-      this.todoList = [
-        ...this.todoList,
-        todo
-      ];
-
-      this.newContent = '';
-
-    }catch(error){
-      console.error('createNewToDoItem failed:' + error.message)
-    }
   }
 
   handleKeyPress(e) {
@@ -64,13 +39,10 @@ export class ToDo extends LitElement {
   }
 
   handleInput(e) {
-    this.todo = e.target.value;
+    this.newContent = e.target.value;
   }
 
-  // this is now being emitted back to the parent from the child component
-  deleteItem(id) {
-    //this is not working - HELP!!!
-  }
+
 
   static get styles() {
     return [style];
@@ -83,11 +55,15 @@ export class ToDo extends LitElement {
       <h1 class="ToDo-Header">LitElement To Do</h1>
       <div class="ToDo-Container">
         <div class="ToDo-Content">
-          ${this.todoList.map((item, key) => {
+          ${this.todoList.map((item) => {
+              console.log(item.isCompleted)
               return html`
                 <to-do-item
-                  item=${item.content}
-                  .deleteItem=${this.deleteItem.bind(this, key)}
+                  .id=${item.id}
+                  .completed=${item.isCompleted}
+                  .item=${item.content}
+                  .deleteItem=${this.deleteItem}
+                  .updateToDoItem=${this.updateToDoItem}
                 ></to-do-item>
               `;
             }
@@ -110,6 +86,64 @@ export class ToDo extends LitElement {
       </div>
     </div>
     `;
+  }
+
+  async getTodos(){
+    try{
+
+      var todoList = await apiClient.get('todo');
+      
+      //update the state
+      this.todoList = todoList;
+    }
+    catch(error){
+      console.error('getTodos failed:' + error.message);
+    }
+  }
+
+  async createNewToDoItem() {
+
+    try{
+
+      var todo = await apiClient.post('todo', { content: this.newContent });
+      
+      //update the state
+      this.todoList = [
+        ...this.todoList,
+        todo
+      ];
+
+      this.newContent = '';
+
+    }catch(error){
+      console.error('createNewToDoItem failed:' + error.message);
+    }
+  }
+
+  async updateToDoItem(id, todo) {
+
+    try{      
+      var updatedTodo = await apiClient.patch('todo', id, todo);      
+      //find and update in place using the response
+      var todoList = [ ...this.todoList ];      
+      var todoIdx = todoList.findIndex(_ => _.id == id);      
+      todoList[todoIdx] = updatedTodo;
+
+      //update the state    
+      this.todoList = [ ...this.todoList ];
+
+    }catch(error){
+      console.error('updateNewToDoItem failed:' + error.message);
+    }
+  }
+
+  async deleteItem(id) {
+    try{
+      await apiClient.delete('todo', id);
+      this.todoList = this.todoList.filter(_ => _.id != id);
+    }catch(error){
+      console.error('deleteItem failed:' + error.message);
+    }
   }
 }
 

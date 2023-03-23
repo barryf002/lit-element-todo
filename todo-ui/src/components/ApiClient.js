@@ -2,21 +2,38 @@ const BASE_URL = "http://localhost:5000";
 
 class ApiClient {
 
-  getJson = async (path) => {
+  get = async (path) => {
     const response = await fetch(`${BASE_URL}/${path}`);
-    return this._getJsonFromResponse(response);    
+    return this._getJsonFromResponse(response);
   }
 
-  postJson = async(url, payload) => {
+  post = async(path, payload) => {
     var response = await fetch(`${BASE_URL}/${path}`, { 
       method: 'POST', 
       headers: { "Content-Type": 'application/json' }, 
-      body: JSON.stringify({ content: this.newContent })
+      body: JSON.stringify(payload)
     });
     return this._getJsonFromResponse(response);
   }
 
-  _getJsonFromResponse = async (res) => {    
+  patch = async(path, id, payload) => {
+    var response = await fetch(`${BASE_URL}/${path}/${id}`, { 
+      method: 'PATCH', 
+      headers: { "Content-Type": 'application/json' }, 
+      body: JSON.stringify(payload)
+    });
+    return this._getJsonFromResponse(response);
+  }
+
+  delete = async (path, id) => {
+    const res = await fetch(`${BASE_URL}/${path}/${id}`, { method: 'DELETE' });
+    if (res.status >= 400)
+      throw new Error(
+        `Request to ${res.url} returned a ${res.status} status code`
+      );
+  }
+
+  _getJsonFromResponse = async (res) => {
     if (res.status >= 400)
       throw new Error(
         `Request to ${res.url} returned a ${res.status} status code`
@@ -25,6 +42,5 @@ class ApiClient {
     return res.json();
   };
 }
-
 
 export const apiClient = new ApiClient();

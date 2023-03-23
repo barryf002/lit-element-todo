@@ -1,6 +1,3 @@
-using System;
-using System.Linq;
-using System.Collections.Generic;
 using Microsoft.AspNetCore.Mvc;
 
 namespace todo_api.Controllers;
@@ -11,9 +8,9 @@ public class TodoController : ControllerBase
 {
   public class Todo
   {
-    public Guid Id { get; set; }
+    public Guid? Id { get; set; }
 
-    public string Content { get; set; }
+    public string? Content { get; set; }
 
     public bool? IsCompleted { get; set; }
   }
@@ -49,5 +46,32 @@ public class TodoController : ControllerBase
     newTodo.Id = Guid.NewGuid();
     Todos.Add(newTodo);
     return Ok(newTodo);
+  }
+
+  [Route("{id:Guid}")]
+  [HttpPatch]
+  public ActionResult<Todo> Patch(Guid id, [FromBody]Todo updatedTodo)
+  {
+    var todo = Todos.FirstOrDefault(_ => _.Id == id);
+    if(todo == null){
+      return BadRequest("todo not found");
+    }
+
+    todo.Content = updatedTodo.Content ?? todo.Content;
+    todo.IsCompleted = updatedTodo.IsCompleted ?? todo.IsCompleted;
+
+    return Ok(todo);
+  }
+
+  [Route("{id:Guid}")]
+  [HttpDelete]
+  public ActionResult<Todo> Delete(Guid id){
+    var todo = Todos.FirstOrDefault(_ => _.Id == id);
+    if(todo == null){
+      return BadRequest("todo not found");
+    }
+
+    Todos.Remove(todo);
+    return Ok();
   }
 }
